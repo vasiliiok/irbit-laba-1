@@ -2,6 +2,7 @@
 #include <vector>
 #include <numeric>
 #include <cmath>
+#include <cstdarg>
 
 class matrix {
 private:
@@ -55,9 +56,22 @@ public:
     }
 
     // General constructor
+    // Как сделать лучше??
     matrix(size_t size, int len_arg, ...):
            matrix_(nullptr), size_(size) {
+        allocateMemory();
 
+        va_list args;
+        va_start(args, len_arg);
+
+        for (int i = 0; i < size_; ++i) {
+            for (int j = 0; j < size_; ++j) {
+                if (len_arg-- <= 0) break;
+                matrix_[i][j] = va_arg(args, double);
+            }
+        }
+
+        va_end(args);
     }
 
     // Destructor
@@ -246,12 +260,11 @@ public:
 };
 
 int main() {
+    //matrix mat(3, 2, 1.0, 2.0);
     matrix mat(3,  {{1, 5, 3},
-                                  {4, 5, 6},
-                                  {7, 8, 9}});
+                                  {4, 5},
+                                  {7, 8}});
 
-
-    //mat.reverse();
     mat.print();
     return 0;
 }

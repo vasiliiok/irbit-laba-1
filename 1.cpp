@@ -10,7 +10,8 @@ private:
     }
 
 private:
-    unsigned char s_block_[256] = {0};
+    // Как без static получить доступ к s_block_ из struct ByteGenerator??
+    static unsigned char s_block_[256];
     unsigned char *key_ = nullptr;
     size_t key_size_ = 0;
 
@@ -44,14 +45,10 @@ private:
     }
 
     struct ByteGenerator {
-        int x, y;
+        int x = 0, y = 0;
         unsigned char s_block[256] = {0};
 
-        explicit ByteGenerator(unsigned char const *s_block_) {
-            x = 0;
-            y = 0;
-            //s_block[256] = {0};
-
+        ByteGenerator() {
             for (int i = 0; i < 256; ++i) {
                 s_block[i] = s_block_[i];
             }
@@ -69,13 +66,30 @@ private:
     };
 
 public:
-    encoder(unsigned char const *key, int size) {
+    encoder(unsigned char const *key, size_t size) {
         allocateKeyMemory(size);
         copyKey(key);
         init();
     }
 
-    void keyMutator(unsigned char const *key, int size) {
+    ~encoder() {
+        clearKeyMemory();
+    }
+
+    encoder(encoder const &obj) {
+        allocateKeyMemory(obj.key_size_);
+        copyKey(obj.key_);
+        init();
+    }
+
+    encoder &operator=(encoder const &obj) {
+        if (this != &obj) {
+            keyMutator(obj.key_, obj.key_size_);
+        }
+        return *this;
+    }
+
+    void keyMutator (unsigned char const *key, size_t size) {
         if(key_size_ != size) {
             clearKeyMemory();
             allocateKeyMemory(size);
@@ -84,10 +98,10 @@ public:
         init();
     }
 
-    void encode(char const *input_path, char const *output_path) {
+    void encode(char const *input_path, char const *output_path, bool flag) {
         std::ifstream input_file(input_path, std::ios_base::binary);
         std::ofstream output_file(output_path, std::ios_base::binary);
-        ByteGenerator generator(s_block_);
+        ByteGenerator generator;
 
         if (input_file.is_open() && output_file.is_open())
         {
@@ -105,11 +119,8 @@ public:
 
 int main() {
     encoder code(reinterpret_cast<const unsigned char *>("123456"), 6);
-    code.encode("../test.cpp", "../test.cip");
-    code.encode("../test.cip", "../t.cpp");
-
-    //code.encode("../test.cpp", "../test2.cip");
-    //code.encode("../test2.cip", "../t2.cpp");
+    code.encode("../test.cpp", "../test.cip", true);
+    code.encode("../test.cip", "../t.cpp", false);
 
     return 0;
 }

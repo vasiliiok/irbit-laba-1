@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cardmod.h>
 
 class encoder {
 private:

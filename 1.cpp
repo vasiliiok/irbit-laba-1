@@ -11,27 +11,46 @@ private:
 
 private:
     unsigned char s_block_[256] = {0};
+    unsigned char *key_ = nullptr;
+    size_t key_size_ = 0;
 
-    void init(unsigned char const *key, int size) {
+    void allocateKeyMemory(size_t key_size) {
+        key_size_ = key_size;
+        key_ = new unsigned char[key_size_]{0};
+    }
+
+    void clearKeyMemory() {
+        delete[] key_;
+        key_ = nullptr;
+        key_size_ = 0;
+    }
+
+    void copyKey(unsigned const char *key) {
+        for (int i = 0; i < key_size_; ++i) {
+            key_[i] = key[i];
+        }
+    }
+
+    void init() {
         for (int i = 0; i < 256; ++i) {
             s_block_[i] = i;
         }
 
         int j = 0;
         for (int i = 0; i < 256; ++i) {
-            j = (j + s_block_[i] + key[i % size]) % 256;
+            j = (j + s_block_[i] + key_[i % key_size_]) % 256;
             swap(i, j, s_block_);
         }
     }
 
     struct ByteGenerator {
         int x, y;
-        unsigned char s_block[];
+        unsigned char s_block[256] = {0};
 
         explicit ByteGenerator(unsigned char const *s_block_) {
             x = 0;
             y = 0;
-            s_block[256] = {0};
+            //s_block[256] = {0};
 
             for (int i = 0; i < 256; ++i) {
                 s_block[i] = s_block_[i];
@@ -50,12 +69,19 @@ private:
     };
 
 public:
-    encoder(unsigned char const *pass, int size) {
-        init(pass, size);
+    encoder(unsigned char const *key, int size) {
+        allocateKeyMemory(size);
+        copyKey(key);
+        init();
     }
 
-    void keyMutator(unsigned char const *pass, int size) {
-        init(pass, size);
+    void keyMutator(unsigned char const *key, int size) {
+        if(key_size_ != size) {
+            clearKeyMemory();
+            allocateKeyMemory(size);
+        }
+        copyKey(key);
+        init();
     }
 
     void encode(char const *input_path, char const *output_path) {

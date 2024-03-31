@@ -3,8 +3,17 @@
 #include <numeric>
 #include <cmath>
 #include <cstdarg>
+#define epsilon 0.0000001
 
 class matrix {
+private:
+    static bool doubleEqInt(double val1, int val2) {
+        if (std::abs(val1 - val2) <= epsilon) {
+            return true;
+        }
+        return false;
+    }
+
 private:
     double **matrix_;
     size_t size_;
@@ -12,8 +21,19 @@ private:
     // Function for allocation memory
     void allocateMemory() {
         matrix_ = new double *[size_];
-        for (int i = 0; i < size_; ++i) {
-            matrix_[i] = new double[size_]{0};
+        int i = 0;
+        while (i++ < size_) {
+            try {
+                matrix_[i] = new double[size_]{0};
+            }
+            catch (std::bad_alloc const &ex) {
+                // Среда пишет, что этот цикл бесконечный...
+                for (int j = 0; j < i; ++j) {
+                    delete[] matrix_[j];
+                }
+                delete[] matrix_;
+                throw ex;
+            }
         }
     }
 
@@ -55,8 +75,6 @@ public:
         }
     }
 
-    // General constructor
-    // Как сделать лучше??
     matrix(size_t size, int len_arg, ...):
            matrix_(nullptr), size_(size) {
         allocateMemory();
@@ -85,9 +103,22 @@ public:
         copyValues(obj);
     }
 
+    class row {
+    private:
+        double *row_;
+
+    public:
+        row(double **matrix, int index):
+            row_(*(matrix + index)) {}
+
+        double &operator[](int index) const {
+            return row_[index];
+        }
+    };
+
     // Overload subscript operator
-    double *operator[](int index) const {
-        return matrix_[index];
+    row operator[](int index) const {
+        return row(matrix_, index);
     }
 
     // Overload assigned operator
@@ -188,6 +219,9 @@ public:
         for (int i = 0; i < temp_matrix.size_ - 1; i++) {
             for (int j = i + 1; j < temp_matrix.size_; j++) {
 
+                if (doubleEqInt(temp_matrix[i][i], 0)) {
+                    return 0;
+                }
                 coefficient = -temp_matrix[j][i] / temp_matrix[i][i];
                 for (int k = 0; k < temp_matrix.size_; k++) {
                     temp_matrix[j][k] += temp_matrix[i][k] * coefficient;
@@ -219,7 +253,9 @@ public:
     // Reverse matrix
     void reverse() {
         double deter = determinant();
-        if (deter == 0) return;
+        if (doubleEqInt(deter, 0)) {
+            return;
+        }
 
         matrix alg_matrix(size_);
 

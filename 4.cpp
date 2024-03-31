@@ -22,18 +22,17 @@ private:
     void allocateMemory() {
         matrix_ = new double *[size_];
         int i = 0;
-        while (i++ < size_) {
-            try {
+        try {
+            while (i++ < size_) {
                 matrix_[i] = new double[size_]{0};
             }
-            catch (std::bad_alloc const &ex) {
-                // Среда пишет, что этот цикл бесконечный...
-                for (int j = 0; j < i; ++j) {
-                    delete[] matrix_[j];
-                }
-                delete[] matrix_;
-                throw ex;
+        }
+        catch (std::bad_alloc const &ex) {
+            for (int j = 0; j < i; ++j) {
+                delete[] matrix_[j];
             }
+            delete[] matrix_;
+            throw ex;
         }
     }
 
